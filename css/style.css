@@ -3,6 +3,8 @@ body {
     box-sizing:border-box;
     margin: 0;
     padding: 0;
+    background-image: url(../graphics/blog_post_back2.jpg);
+    background-size: 200px;
     
   }
 
@@ -13,7 +15,7 @@ body {
     background-color: white;
     padding: 10px;
     font-size: 1.25em;
-  }
+  } 
 
 .giphy {
 
