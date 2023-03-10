@@ -1,0 +1,141 @@
+body, *, *:before, *after {
+
+    box-sizing:border-box; /*only the content*/
+}
+
+html, body {
+    font-family: Helvetica, sans-serif;
+    font-size: 16px;
+    color: #b9b9b9;
+    
+    
+    
+}
+
+
+h1,h2,h3,h4,h5,h6 .title_image {
+    font-family: "Economica", sans-serif;
+    text-transform: uppercase;
+    font-weight: bold;
+    margin: 0 0 1em;
+}
+
+/* Make h2 a little bit bigger */
+h2 {
+    font-size: 1.6rem;
+    color: #1d1d1d;
+}
+
+/* Make h3 a little bit smaller */
+h3 {
+    font-size: 1.2rem;
+
+}
+
+a {
+    color: inherit;
+    font-weight: bold;
+    text-decoration: none; 
+}
+
+/* No underline on anchors, or the color to changes once clicked  or whe hovering*/
+
+a:hover,a:visited,a:active {
+    text-decoration: none;
+    color: inherit;
+}
+
+p {
+    margin: 0.5em 0;
+    line-height: 1.8em;
+    font-size: 1.2rem;
+    text-align: justify;
+
+}
+/* Create a generic class that applies fixed width, centers*/
+
+.fixed-width {
+    width: 950px;
+    margin: 0 auto;
+}
+
+.cf:before,
+.cf:after {
+    content: " "; /* 1 */
+    display: table; /* 2 */
+}
+
+.cf:after {
+    clear: both;
+}
+
+.cf {
+    *zoom: 1;
+}
+
+.data-block {
+    margin: 3rem;
+}
+
+/*====================== 
+Header
+======================== */
+
+.page-header {
+
+    /*border: 1px solid red;*/
+
+    border-top: 5px solid #a5a5a5;
+    padding-bottom:2em;
+}
+
+.page-header h1 {
+    position: absolute;
+    overflow: hidden;
+    top:-100%;
+    left: -100%;
+
+}
+
+.page-header > div {
+    /*border: 2px solid blue;*/
+    position: relative;
+}
+
+
+.page-header .title_header {
+
+    font-family:'Pacifico', cursive;
+    font-size: 2.5em;
+    color: #1d1d1d;
+    position: absolute;
+    bottom: 0;
+    
+}
+
+
+.page-header nav {
+    float: right;
+    font-family: "Economica", sans-serif;
+}
+
+.page-header nav li {
+
+    color: #a5a5a5;
+    float: left;
+    margin-right: 3em;
+    padding-top: 3em;
+    font-size: 20px;
+
+}
+
+/* But we want the last nav element to be stuck to right margin*/
+.page-header nav li:last-child {
+    margin-right: 0em;
+} 
+
+.page-header nav li em {
+    display: block;
+    color: #1d1d1d;
+    font-size: 20px;
+}

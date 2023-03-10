@@ -1,0 +1,102 @@
+body {
+  box-sizing:border-box;
+  margin: 0;
+  padding: 0;
+  height: 100vh;
+  
+}
+
+.content {
+  height:100%;
+  width: 60%;
+  margin: 0 auto;
+  background-color: white;
+  padding: 10px;
+  font-size: 1.25em;
+}
+
+.page-header {
+
+  /*border: 1px solid red;*/
+
+  border-top: 5px solid #a5a5a5;
+  padding-bottom:2em;
+}
+
+.page-header h1 {
+  position: absolute;
+  overflow: hidden;
+  top:-100%;
+  left: -100%;
+
+}
+
+.page-header > div {
+  /*border: 2px solid blue;*/
+  position: relative;
+}
+
+
+.page-header .title_header {
+
+  font-family:'Pacifico', cursive;
+  font-size: 2.5em;
+  color: #1d1d1d;
+  position: absolute;
+  bottom: 0;
+  
+}
+
+
+.page-header nav {
+  float: right;
+  font-family: "Economica", sans-serif;
+}
+
+.page-header nav li {
+
+  color: #a5a5a5;
+  float: left;
+  margin-right: 3em;
+  padding-top: 3em;
+  font-size: 20px;
+
+}
+
+/* But we want the last nav element to be stuck to right margin*/
+.page-header nav li:last-child {
+  margin-right: 0em;
+} 
+
+.page-header nav li em {
+  display: block;
+  color: #1d1d1d;
+  font-size: 20px;
+}
+
+.fixed-width {
+  width: 950px;
+  margin: 0 auto;
+}
+
+.cf:before,
+.cf:after {
+  content: " "; /* 1 */
+  display: table; /* 2 */
+}
+
+.cf:after {
+  clear: both;
+}
+
+.cf {
+  *zoom: 1;
+}
+
+.data-block {
+  margin: 3rem;
+}
+
+a {
+  color: black;
+}

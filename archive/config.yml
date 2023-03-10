@@ -1,0 +1,77 @@
+baseURL: https://surekhanaga88.github.io/
+languageCode: en-us
+title: Connectionist Revolution
+theme: PaperMod
+
+enableInlineShortcodes: true
+enableRobotsTXT: true
+buildDrafts: false
+buildFuture: false
+buildExpired: false
+enableEmoji: true
+pygmentsUseClasses: true
+# googleAnalytics: UA-123-45
+
+minify:
+    disableXML: true
+
+outputs:
+    home:
+        - HTML
+        - RSS
+        - JSON
+
+params:
+    env: production
+    description: "Connectionist Revolution"
+    
+    defaultTheme: light
+    disableThemeToggle: true
+    ShowReadingTime: true
+    displayFullLangName: true
+    ShowPostNavLinks: true
+    ShowBreadCrumbs: true
+    ShowCodeCopyButtons: true
+    ShowRSSButtonInSectionTermList: true
+    ShowToc: true
+    comments: false
+
+    profileMode:
+        enabled: false
+        title: Connectionist Revolution
+        buttons:
+            - name: Archives
+              url: archives
+            - name: Tags
+              url: tags
+    
+    homeInfoParams:
+        Title: "Connectionist Revolution"
+        Content: >
+            Welcome to my website.
+
+            - **Connectionist Revolution** : learnings and interesting project implementations
+
+    socialIcons:
+        - name: github
+          url: https://github.com/surekhanaga88/surekhanaga88.github.io   
+
+    # label:
+    #     text: "Home"
+    #     icon: icon.png
+    #     iconHeight: 35
+
+    # analytics:
+    #     google:
+    #         SiteVerificationTag: "XVYZabc"
+
+    assets:
+        disableHLJS: true
+
+markup:
+    goldmark:
+        renderer:
+            unsafe: true
+    highlight:
+        noClasses: false
+

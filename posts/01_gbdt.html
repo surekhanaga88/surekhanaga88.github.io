@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>
+            Note on Gradient Tree Boosting
+        </title>
+        <meta charset="utf-8">
+        <script type="text/javascript"
+            src="http://cdn.mathjax.org/mathjax/latest/MathJax.js?config=TeX-AMS-MML_HTMLorMML">
+        </script>
+        
+        <link href="../css/style.css" rel="stylesheet">
+    </head>
+    <body>
+        <div class="content">
+            
+                <h1>Note on Gradient Tree Boosting</h1>
+                <p>
+                    Take a look <a href="">here</a> to see a simple implementation of gradient
+                    tree boosting using LightGBM predicting stock market returns. Below is a very brief post summarising key ideas behind gradient boosting, with minimal use of mathematical equations. The only assumption here
+                    is that reader is already familiar with decision trees.
+
+                </p>
+                <h2>One-line summary:</h2>
+
+                
+                <p>Take a bunch of weak trees one after the other, each one approximating the distance between the previous tree and the target and keep adding the difference to the prediction to reduce that distance, together making the prediction better in the end. </p>
+
+                <h3>United we stand, divided we fall</h3>
+
+                <div class="container">
+
+                <article>
+                    <figure class="giphy">
+                        <img src="https://preview.redd.it/2el4qjhitp291.gif?format=png8&s=f9c0ccdc88599c49b24700df84b05f132849954b">
+                        <p>Boosting weak learners!</p>
+                    </figure>
+
+                </article>
+                </div>
+                
+             <div class="post">
+                
+                <h2>The 5 min takeway in plain English:</h2>
+                
+                    <ol>
+                        <li>Motivation: Combine outputs of weak learners (trees) to obtain a more accurate prediction</li>
+                        <li>Weak learners : These are decision trees that predict with accuracy just over 0.5 or random guessing.</li>
+                        <li>Trees: Regression/classification trees (CART) that use information gain to find best split:
+                            <ul>
+                                <li>Continuous attributes/predictors - Sort the values and find for all unique values the one that gives max information gain</li>
+                                <li>Categorical attributes/predictors - For all unique categories find the split value with max info gain</li>
+                                <li>Entropy is used to compute information gain in the case of classification. Alternatively gini impurity is also used to compare splits</li>
+                                <li>Emtropy in turn is a function of proportions when it comes to classification</li>
+                                <li>For regression, variance is a measure of ucnertainty used to compute info gian </li>
+                                <li>Training parameters include
+                                    <ul>
+                                        <li>max depth : how big you want to grow the tree</li>
+                                        <li>minimum info gain : what is the minimum gain in info or loss in entropy the split should yield</li>
+                                        <li>miimum data for split: minimum no of samples/observations available to allow a split</li>
+                                    </ul>  
+                                </li>
+                                <li>After doing the above recursively and meeting the stopping criteria as in above parameters:</li>
+                                <ul>
+                                    <li>prediction is mean for regression</li>
+                                    <li>prediction is mode i.e., max observations belonging to a class</li>
+                                </ul>
+                            </ul>
+                        </li>
+                        <li>Boosting: trees + iterations.
+                            <ul>
+                                <li>Each iteration fit a tree</li>
+                                <li>We have a prediction and hence some residuals</li>
+                                <li>Use these residuals:
+                                    <ul>
+                                        <li>AdaBoost: Re-scale (exponential) the miscalssified observations and refit the tree</li>
+                                        <li>Gradient tree boosting:Refit regression trees using the residuals (gradient) as targets</li>
+                                    </ul>
+                                </li>
+                                <li> Find a way to combine all the trees:
+                                    <ul>
+                                        <li>AdaBoost: Weight the models, the sign identifies the class </li>
+                                        <li>Gradient tree boosting: Update previous output with output from fitting tree against current residuals 
+                                            ; the final update yields the prediction
+                                        </li>
+                                    
+                                    </ul>
+                                </li>
+
+                               
+                            </ul>
+                        </li>
+                        
+
+                    </ol>
+
+                <h2>Understanding the key to gradient boosting:</h2>
+                    <p>
+                        Its clear that gradient boosting is doing something with the residuals. But it's called "Gradient" boosting and not "Residuals" boosting.
+                        This means it is also doing something with gradients. When we say gradient we want to think gradient descent. But first things first. Take a look at point 4 above
+                        - we know we are iterating for some reason,say M iterations. Each iteration <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>m</mi></math> is a chance to get closer to the target. 
+                        So each iteration we use to reduce the distance between <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>y</mi></math> and <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <msub><mi>F</mi><mn>m</mn></msub><mi>(X)</mi></math>.
+                        How? By targeting the residuals directly.Let's go over the iterations first.
+                    </p>
+                    <h3>Boosting = Trees + Iterations</h3>
+                    <p>
+                        Let <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>y</mi></math> be the target we are approximating. Let the initial approximation be <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <msub><mi>F</mi><mn>0</mn></msub><mi>(X)</mi></math>. The residuals from this approximation, <math xmlns="http://www.w3.org/1998/Math/MathML">
+                                <msub><mi>r</mi><mn>0</mn></msub></math>
+                    </p>
+                    <p style="margin-left: 20px;">
+                        Iteration m = 1: Fit a tree <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>T</mi><mn>1</mn></msub><mi>(X)</mi></math> to approximate <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <msub><mi>r</mi><mn>0</mn></msub></math>. Add to previous approximation of <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>y</mi></math> :  <math xmlns="http://www.w3.org/1998/Math/MathML">
+                                <msub><mi>F</mi><mn>1</mn></msub><mi>(X)</mi><mo>=</mo><msub><mi>F</mi><mn>0</mn></msub><mi>(X)</mi><mo>+</mo><msub><mi>T</mi><mn>1</mn></msub><mi>(X)</mi></math>. New residuals : <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <mi>y</mi><mo>-<msub><mi>F</mi><mn>1</mn></msub><mi>(X)</mi><mo>=</mo><msub><mi>r</mi><mn>1</mn></msub></math> where <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>r</mi><mn>1</mn></msub><mo><</mo><msub><mi>r</mi><mn>0</mn></msub></math>
+
+                    </p>
+                    <p style="margin-left: 20px;">
+                        Iteration m = 2: Fit a tree <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>T</mi><mn>2</mn></msub><mi>(X)</mi></math> to approximate <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <msub><mi>r</mi><mn>1</mn></msub></math>. Add to previous approximation of <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>y</mi></math> :  <math xmlns="http://www.w3.org/1998/Math/MathML">
+                                <msub><mi>F</mi><mn>2</mn></msub><mi>(X)</mi><mo>=</mo><msub><mi>F</mi><mn>1</mn></msub><mi>(X)</mi><mo>+</mo><msub><mi>T</mi><mn>2</mn></msub><mi>(X)</mi></math>. New residuals : <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <mi>y</mi><mo>-<msub><mi>F</mi><mn>2</mn></msub><mi>(X)</mi><mo>=</mo><msub><mi>r</mi><mn>2</mn></msub></math> where <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>r</mi><mn>2</mn></msub><mo><</mo><msub><mi>r</mi><mn>1</mn></msub></math>
+
+                    </p>
+                    <p style="margin-left: 20px;">
+                        Iteration m = 3: Fit a tree <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>T</mi><mn>3</mn></msub><mi>(X)</mi></math> to approximate <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <msub><mi>r</mi><mn>2</mn></msub></math>. Add to previous approximation of <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>y</mi></math> :  <math xmlns="http://www.w3.org/1998/Math/MathML">
+                                <msub><mi>F</mi><mn>3</mn></msub><mi>(X)</mi><mo>=</mo><msub><mi>F</mi><mn>2</mn></msub><mi>(X)</mi><mo>+</mo><msub><mi>T</mi><mn>3</mn></msub><mi>(X)</mi></math>. New residuals : <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <mi>y</mi><mo>-<msub><mi>F</mi><mn>3</mn></msub><mi>(X)</mi><mo>=</mo><msub><mi>r</mi><mn>3</mn></msub></math> where <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>r</mi><mn>3</mn></msub><mo><</mo><msub><mi>r</mi><mn>2</mn></msub></math>
+
+                    </p>
+                    <p style="margin-left: 20px;">
+                        &#8226;<br>
+                        &#8226;<br>
+                        &#8226;<br>
+                    </p>
+                    
+                    <p style="margin-left: 20px;">
+                        Iteration m = M: Fit a tree <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>T</mi><mn>M</mn></msub><mi>(X)</mi></math> to approximate <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <msub><mi>r</mi><mn>M-1</mn></msub></math>. Add to previous approximation of <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>y</mi></math> :  <math xmlns="http://www.w3.org/1998/Math/MathML">
+                                <msub><mi>F</mi><mn>M</mn></msub><mi>(X)</mi><mo>=</mo><msub><mi>F</mi><mn>M-1</mn></msub><mi>(X)</mi><mo>+</mo><msub><mi>T</mi><mn>M</mn></msub><mi>(X)</mi></math>. This is the final prediction
+                                <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>F</mi><mn>M</mn></msub><mi>(X)</mi><mo>=</mo><mi>&ycirc;</mi></math>. Final residuals must be the smallest : <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <mi>y</mi><mo>-</mo><mi>&ycirc;</mi></math>
+
+                    </p>
+                    <h3>Gradient descent <math xmlns="http://www.w3.org/1998/Math/MathML"><mo>&asymp;</mo></math> Chasing smaller residuals</h3>
+                    <p>
+                        With each iteration we are chasing smaller residuals. This feels a bit like we night be minimising some function of these residuals. So chasing lower residuals seems to be equivalent to going though such a function
+                        in the direction of its minimum. Think of a derivative in this context. A derivative measures slope. Visualise such a function to have a minimum there must be a downward sloping part at the least and perheps an upward sloping part too.
+                        A gradient takes us uphill, whereas negative of a gradient takes us downhill. Therefore moving in the direction of reducing reisduals is equivalent to moving in the opposite direction of the gradient.
+                    </p>
+                    <div class="container">
+                    <figure class="graph">
+                        <img src="../graphics/graph2.png">
+                        
+                    </figure>
+                    </div>
+                    
+                    
+                    <p>
+                        Go back to the iterations. We have
+                    </p>
+                    <p style="margin-left: 20px;">
+                        <math xmlns="http://www.w3.org/1998/Math/MathML"> <msub><mi>&ycirc;</mi><mn>m</mn></msub><mo>=</mo><msub><mi>&ycirc;</mi><mn>m-1</mn></msub><mo>+</mo><msub><mi>T</mi><mn>m</mn></msub><mi>(X)</mi></math>
+
+                   </p>
+                   <p>
+                    But recall that T(X) our trees are approximations of previous residuals, let <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&eta;</mi></math> represent how quickly T(x) learns the previous residuals: <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>T</mi><mn>m</mn></msub><mi>(X)</mi><mo>=</mo><mi>&eta;</mi><mspace depth="10px" height="10px" width="10px"/><msub><mi>r</mi><mn>m-1</mn></msub></math>
+                   </p>
+
+                   <p style="margin-left: 20px;">
+                    <math xmlns="http://www.w3.org/1998/Math/MathML"> <msub><mi>&ycirc;</mi><mn>m</mn></msub><mo>=</mo><msub><mi>&ycirc;</mi><mn>m-1</mn></msub><mo>+</mo><mi>&eta;</mi><mspace depth="10px" height="10px" width="10px"/><msub><mi>r</mi><mn>m-1</mn></msub></math>
+
+                   </p>
+                   <p>
+                    In gradient descent we have a position update equation that looks like this, where  <math xmlns="http://www.w3.org/1998/Math/MathML"><mo>&#x2207;</mo></math> is the gradient :
+                   </p>
+                   <p style="margin-left: 20px;">
+
+                    <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mn>t</mn></msub><mo>=</mo><msub><mi>x</mi><mn>t-1</mn></msub><mo>-</mo><mi>&eta;</mi><mspace depth="10px" height="10px" width="10px"/><mo>&#x2207;</mo><mi>f</mi></math>(<math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mn>t-1</mn></msub></math>)
+
+                   </p>
+
+                    <p>
+                    Re-writing the prediction update equation we see its equivalence with the position update equation.
+                    </p>
+
+                    </p>
+
+                    <p style="margin-left: 20px;">
+                    <math xmlns="http://www.w3.org/1998/Math/MathML"> <msub><mi>&ycirc;</mi><mn>m</mn></msub><mo>=</mo><msub><mi>&ycirc;</mi><mn>m-1</mn></msub><mo>-</mo><mi>&eta;</mi><mspace depth="10px" height="10px" width="10px"/><msub><mi>(-r</mi><mn>m-1</mn></msub></math>)
+
+                    </p>
+                    
+                    <h3>Loss functions and gradient</h3>
+                    <p>
+                        So what functions are we talking about. Turns out that the key to the equivalence between residuals and gradient descent all comes down to Loss functions. In fact there are some convenient Loss functions that can show that residuals are equivalent to
+                        the negative gradient. For regression problems consider
+                    </p>
+                    
+                        
+                        <h4>Squared error:</h4> 
+                    <p style="margin-left: 20px;">
+                        <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>L</mi><mfenced><mi>y</mi><mi>&ycirc;</mi></mfenced><mo>=&sum;</mo><msup><mi>(y-&ycirc;)</mi><mn>2</mn></msup></math>
+
+
+                    </p>
+                    <p>
+                        Simplifying without summations and removing constants we end up with <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <mfrac>
+                                <mrow>
+                                    <mo>&part;</mo>
+                                </mrow>
+                                <mrow>
+                                    <mo>&part;</mo>
+                                    <mspace depth="10px"height="5px" width="5px"/>
+                                    <mi>&ycirc;</mi>
+
+                                </mrow>
+                            </mfrac>
+
+                            <mi>L</mi>
+                            <mfenced>
+                                <mi>y</mi><mi>&ycirc;</mi>
+                            </mfenced>
+                            <mo>=<mo>-</mo><mn>2</mn><mi>(y</mi><mo>-</mo><mo>&ycirc;)</mo>
+                            </math>
+                    </p>
+                    <p>
+                        Ignoring the constamt (-2) we end up with reisdual.
+                    </p>
+
+                    <h4>Absolute error:</h4>
+
+                    <p style="margin-left: 20px;">
+                        <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>L</mi><mfenced><mi>y</mi><mi>&ycirc;</mi></mfenced><mo>=&sum;</mo><mo>|</mo><mi>y-&ycirc;</mi><mo>|</mo></math>
+                    </p>
+                    <p>
+                        The gradient 
+                        <math xmlns="http://www.w3.org/1998/Math/MathML">
+                            <mfrac>
+                                <mrow>
+                                    <mo>&part;</mo>
+                                </mrow>
+                                <mrow>
+                                    <mo>&part;</mo>
+                                    <mspace depth="10px"height="5px" width="5px"/>
+                                    <mi>&ycirc;</mi>
+
+                                </mrow>
+                            </mfrac>
+
+                            <mi>L</mi>
+                            <mfenced>
+                                <mi>y</mi><mi>&ycirc;</mi>
+                            </mfenced>
+                            <mo>=</mo><mo>-</mo>
+                            <mi>sign</mi><mi>(y</mi><mo>-</mo><mo>&ycirc;)</mo>
+                            </math>
+                    </p>
+                    <p>
+                        For classification too we have similar result.
+                    </p>
+                    <h4>Deviance or cross-entropy</h4>
+                    If <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>&ycirc;</mi></math> is the prediction then by logistic transformation we have <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi fontsize="20px">p</mi><mi>i</mi></msub><mo>=</mo>
+                    
+                    <mfrac fontsize="30px">
+                        <mrow>
+                        <msup>
+                            <mi fontsize=30px>e</mi>
+                            <msub>
+                                <mi fontsize=40px>&ycirc;</mi>
+                                <mi fontsize=20px>i</mi>
+
+                            </msub>
+                            
+                        </msup>
+                        </mrow>
+                        <mrow>
+                            <mo fontsize="30px">(</mo>
+                            <mn fontsize="30px">1</mn>
+                            <mo fontsize="20px">+</mo>
+                            <msup>
+                                <mi fontsize=30px>e</mi>
+                                <msub>
+                                    <mi fontsize=40px>&ycirc;</mi>
+                                    <mi fontsize=20px>i</mi>
+    
+                                </msub>
+                                
+                            </msup>
+                        <mo fontsize="30px">)</mo>
+                                                   
+                        </mrow>
+                    </mfrac>                   
+                    
+                    </math>
+                
+                <p>
+                    Then the log-likelihood loss function is 
+                    <math xmlns="http://www.w3.org/1998/Math/MathML"><mi>L = </mi><msub><mi>y</mi><mi>i</mi></msub><mi>log</mi><mo>(</mo><msub><mi>p</mi><mi>i</mi></msub><mo>)</mo>
+                        <mo>+</mo><mo>(</mo><mn>1</mn><mo>-</mo><msub><mi>y</mi><mi>i</mi></msub><mo>)</mo><mi>log</mi><mo>(</mo><mn>1</mn><mo>-</mo><msub><mi>p</mi><mi>i</mi></msub><mo>)</mo></math>
+                    
+                              
+                    </p>
+                <p>
+                    It can be shown that gradient of L is <math xmlns="http://www.w3.org/1998/Math/MathML"><mo>-</mo><mi>(y</mi><mo>-</mo><mo>p)</mo>
+                        </math>
+                </p>
+            
+                <h4>How does it work?</h4>
+
+                <p>
+                    For each iteration we need a vector of residuals. These are the gradients at each <math xmlns="http://www.w3.org/1998/Math/MathML"><msub><mi>x</mi><mi>i</mi></msub></math> for i=1,2,...,N for the corresponding loss function. This is a direction vector, not just a magnitude.
+                    Use this vector as a target and fit regression tree. This would consist of dividing the data into subsets until the last observation is left. For each of these data subsets we will come up with a constant (i.e. independent of i observations) , a function of data-subset specific residuals. And
+                    then we combine these across data subsets. Finally, add combined constant to previous prediction. The final iteration leads to the last update of prediction.
+
+
+                </p>
+
+                <h3>References:</h3>
+            
+                <ol>
+                    <li><a href="https://blog.mlreview.com/gradient-boosting-from-scratch-1e317ae4587d">Gradient tree boosting regression from scratch</a></li>
+
+                    <li><a href="https://zpz.github.io/blog/gradient-boosting-tree-for-binary-classification/">Gradient tree boosting classification - Notes and intuition</a></li>
+                
+                    <li><a href="https://explained.ai/gradient-boosting/descent.html">Equivalence between boosting trees and gradient descent</a></li>
+                
+                    <li><a href="https://hastie.su.domains/Papers/ESLII.pdf">The Elements of Statistical Learning - Chapters 9 & 10</a></li>
+                
+                </ol>
+
+
+             </div>
+
+                
+            
+        </div>
+
+
+    </body>
+
+</html>
